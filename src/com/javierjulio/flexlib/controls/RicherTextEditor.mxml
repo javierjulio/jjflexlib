@@ -1,0 +1,945 @@
+<?xml version="1.0"?>
+<!--
+
+	ADOBE SYSTEMS INCORPORATED
+	Copyright 2005-2007 Adobe Systems Incorporated
+	All Rights Reserved.
+
+	NOTICE: Adobe permits you to use, modify, and distribute this file
+	in accordance with the terms of the license agreement accompanying it.
+
+-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+	verticalGap="0" width="100%" height="100%" 
+	creationComplete="creationCompleteHandler()">
+	
+	<mx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+		
+		[DefaultTriggerEvent("change")]
+		
+		/**
+		 *  Name of the CSS Style declaration to use for the styles for the TextArea.
+		 *  By default, the TextArea uses the RichTextEditor control's inheritable styles.
+		 */
+		[Style(name="textAreaStyleName", type="String", inherit="no")]
+		
+		[IconFile("/assets/images/RichTextEditor.png")]
+		
+		[Exclude(name="boldButton", kind="property")]
+		[Exclude(name="colorPickerControl", kind="property")]
+		[Exclude(name="defaultButton", kind="property")]
+		[Exclude(name="fontFamilies", kind="property")]
+		[Exclude(name="fontFamilyControl", kind="property")]
+		[Exclude(name="fontSizes", kind="property")]
+		[Exclude(name="fontSizeControl", kind="property")]
+		[Exclude(name="fontStyleControl", kind="property")]
+		[Exclude(name="icon", kind="property")]
+		[Exclude(name="italicButton", kind="property")]
+		[Exclude(name="label", kind="property")]
+		[Exclude(name="layout", kind="property")]
+		[Exclude(name="linkControl", kind="property")]
+		[Exclude(name="listControl", kind="property")]
+		[Exclude(name="textAlignmentControl", kind="property")]
+		[Exclude(name="toolBar", kind="property")]
+		[Exclude(name="underlineButton", kind="property")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.textClasses.TextRange;
+			import mx.core.IUITextField;
+			import mx.core.UIComponent;
+			import mx.core.UITextFormat;
+			import mx.core.mx_internal;
+			
+			use namespace mx_internal;
+			
+			[Embed(source="/assets/images/icon_style_bold.png")]
+			public static const ICON_BOLD:Class;
+			
+			[Embed(source="/assets/images/icon_style_italic.png")]
+			public static const ICON_ITALIC:Class;
+			
+			[Embed(source="/assets/images/icon_style_underline.png")]
+			public static const ICON_UNDERLINE:Class;
+			
+			[Embed(source="/assets/images/icon_bullet.png")]
+			public static const ICON_LIST:Class;
+			
+			[Embed(source="/assets/images/icon_align_left.png")]
+			public static const ICON_ALIGN_LEFT:Class;
+			
+			[Embed(source="/assets/images/icon_align_center.png")]
+			public static const ICON_ALIGN_CENTER:Class;
+			
+			[Embed(source="/assets/images/icon_align_right.png")]
+			public static const ICON_ALIGN_RIGHT:Class;
+			
+			[Embed(source="/assets/images/icon_align_justify.png")]
+			public static const ICON_ALIGN_JUSTIFY:Class;
+			
+			[Bindable]
+			/**
+			 * An array containing all common font sizes.
+			 * @default 8,9,10,12,14,16,18,20,22,24,26,28,36,48,72
+			 */
+			public var fontSizes:Array = ['8','9','10','12','14','16','18','20','22','24','26','28','36','48','72'];
+			
+			[Bindable]
+			/**
+			 * An array containing all possible font families.
+			 * @default _sans, _serif, _typewriter, Arial, Courier, Courier New, Geneva, Georgia, Helvetica, Times New Roman, Times, Verdana
+			 */
+			public var fontFamilies:Array = ['_sans', '_serif', '_typewriter', 'Arial', 'Courier', 'Courier New', 
+											 'Geneva', 'Georgia', 'Helvetica', 'Times New Roman', 'Times', 'Verdana'];
+			
+			[Bindable]
+			/**
+			 * An array containing all possible text alignments. Consists of a default 
+			 * set of objects with the following keys: icon, action and toolTip.
+			 */
+			public var textAlignments:Array = [{icon: ICON_ALIGN_LEFT, action: "left", toolTip: alignLeftToolTip},
+											   {icon: ICON_ALIGN_CENTER, action: "center", toolTip: alignCenterToolTip},
+											   {icon: ICON_ALIGN_RIGHT, action: "right", toolTip: alignRightToolTip},
+											   {icon: ICON_ALIGN_JUSTIFY, action: "justify", toolTip: alignJustifyToolTip}];
+			
+			/**
+			 * The tool tip to display for the font family ComboBox.
+			 * 
+			 * @default Font Family
+			 */
+			public var fontFamilyToolTip:String = "Font Family";
+			
+			/**
+			 * The tool tip to display for the font size ComboBox.
+			 * 
+			 * @default Font Size
+			 */
+			public var fontSizeToolTip:String = "Font Size";
+			
+			/**
+			 * The tool tip to display for the bold button.
+			 * 
+			 * @default Bold (CTRL + B)
+			 */
+			public var boldToolTip:String = "Bold (CTRL + B)";
+			
+			/**
+			 * The tool tip to display for the italic button.
+			 * 
+			 * @default Italic (CTRL + I)
+			 */
+			public var italicToolTip:String = "Italic (CTRL + I)";
+			
+			/**
+			 * The tool tip to display for the underline button.
+			 * 
+			 * @default Underline (CTRL + U)
+			 */
+			public var underlineToolTip:String = "Underline (CTRL + U)";
+			
+			/**
+			 * The tool tip to display for the ColorPicker component.
+			 * 
+			 * @default Choose a Color
+			 */
+			public var colorPickerControlToolTip:String = "Choose a Color";
+			
+			/**
+			 * The object property to look for within the textAlignments array 
+			 * that will contain a value used for the tool tip. If field name 
+			 * name is "toolTip" then each object within the array must 
+			 * contain a key named "toolTip" which its value will be the tool 
+			 * tip itself.
+			 * 
+			 * @default toolTip
+			 */
+			public var alignToolTipField:String = "toolTip"; // toolTips defined in textAlignmentArray toolTip property
+			
+			/**
+			 * The tool tip to display for the left text alignment button.
+			 * 
+			 * @default Align Left
+			 */
+			public var alignLeftToolTip:String = "Align Left";
+			
+			/**
+			 * The tool tip to display for the center text alignment button.
+			 * 
+			 * @default Align Center
+			 */
+			public var alignCenterToolTip:String = "Align Center";
+			
+			/**
+			 * The tool tip to display for the right text alignment button.
+			 * 
+			 * @default Align Right
+			 */
+			public var alignRightToolTip:String = "Align Right";
+			
+			/**
+			 * The tool tip to display for the justify text alignment button.
+			 * 
+			 * @default Align Justify
+			 */
+			public var alignJustifyToolTip:String = "Align Justify";
+			
+			/**
+			 * The tool tip to display for the list (bullet) button.
+			 * 
+			 * @default List (CTRL + L)
+			 */
+			public var bulletToolTip:String = "List (CTRL + L)";
+			
+			/**
+			 * The tool tip to display for the link TextInput component.
+			 * 
+			 * @default Link
+			 */
+			public var linkToolTip:String = "Link";
+			
+			private var linkTextCommitted:Boolean = false;
+			private var toolBarPositionChanged:Boolean = false;
+			private var textChanged:Boolean = false;
+			private var htmlTextChanged:Boolean = false;
+			private var previousTextFormat:TextFormat = null;
+			private var textFormatChanged:Boolean = false;
+			private var lastCaretIndex:int = -1;	// -1 is used to force updation of the ToolBar styles
+			private var invalidateToolBarFlag:Boolean = false;
+			private var firstTime:Boolean = true;
+			
+		    //--------------------------------------------------------------------------
+		    //
+		    //  Properties
+		    //
+		    //--------------------------------------------------------------------------
+			
+		    //----------------------------------
+		    //  defaultLinkProtocol
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the defaultLinkProtocol property.
+			 */
+			private var _defaultLinkProtocol:String = "http://";
+			
+			[Inspectable(category="General", enumeration="http://,https://", defaultValue="http://")]
+			
+			/**
+			 * By default the link protocol chosen is <code>http://</code>.
+			 * 
+			 * @default "http://"
+			 */
+			public function get defaultLinkProtocol():String
+			{
+				return _defaultLinkProtocol;
+			}
+			
+			/**
+			 *  @private
+			 */
+			public function set defaultLinkProtocol(value:String):void
+			{
+				_defaultLinkProtocol = value;
+
+				if (linkControl)
+					linkControl.text = _defaultLinkProtocol;
+			}
+			
+		    //----------------------------------
+		    //  showToolBar
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the showToolBar property.
+			 */
+			private var _showToolBar:Boolean = true;
+			
+			[Inspectable(category="General", defaultValue="true")]
+			
+			/**
+			 * If <code>true</code>, the tool bar containing the rich text controls 
+			 * will be displayed by default at the bottom. The tool bar position 
+			 * is configurable via the toolBarPosition property.
+			 * 
+			 * @default true
+			 */
+			public function get showToolBar():Boolean
+			{
+				return _showToolBar;
+			}
+			
+			/**
+			 *  @private
+			 */
+			public function set showToolBar(value:Boolean):void
+			{
+				_showToolBar = value;
+				toolBarContainer.includeInLayout = value;
+				toolBarContainer.visible = value;
+			}
+			
+		    //----------------------------------
+		    //  toolBarControls
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the toolBarControls property.
+			 */
+			private var _toolBarControls:String = "";
+			
+			[Inspectable(category="General", enumerations="fontStyle,fontFamily,fontSize,colorPicker,textAlignment,list,link")]
+			
+			/**
+			 * Specify which controls you want displayed and in what order (from 
+			 * first to last) using a comma delimited list. The controls you can choose 
+			 * from include: fontStyle, fontFamily, fontSize, colorPicker, textAlignment, 
+			 * list, and link. If you just want all to be displayed you can use an 
+			 * asterisk as a short hand. Here are 2 examples:
+			 * 
+			 * The following will only show 4 sets of controls but will be laid out
+			 * in the specified order, with fontStyle being displayed first, 
+			 * textAlignment second and so on.
+			 * <code>toolBarControls="fontStyle,textAlignment,link,colorPicker"</code>
+			 * 
+			 * The following will display all controls
+			 * <code>toolBarControls="*"</code>
+			 * 
+			 * @default ""
+			 */
+			public function get toolBarControls():String
+			{
+				return _toolBarControls;
+			}
+			
+			/**
+			 *  @private
+			 */
+			public function set toolBarControls(value:String):void
+			{
+				_toolBarControls = value;
+
+				if (toolBar) 
+				{
+					var items:Array = _toolBarControls.split(",");
+
+					for (var i:uint = 0; i < toolBar.numChildren; i++) 
+					{
+						var control:UIComponent = toolBar.getChildAt(i) as UIComponent;
+						var itemPosition:uint = items.indexOf(control.id.replace("Control", ""));
+
+						// display all controls or display the control in desired position
+						if (_toolBarControls == "*") 
+						{
+							// since controls are already laid out in position 
+							// just use the array loop index
+							toolBar.setChildIndex(control, i);
+						} 
+						else if (itemPosition >= 0 && itemPosition <= toolBar.numChildren) 
+						{
+							// otherwise we need to use the position of the item specified in the toolBarControls string
+							toolBar.setChildIndex(control, itemPosition);
+						}
+
+						// display all or specific valid controls, if not valid then we hide them or do nothing
+						if (_toolBarControls == "*" || (itemPosition >= 0 && itemPosition <= toolBar.numChildren)) 
+						{
+							control.includeInLayout = true;
+							control.visible = true;
+						} 
+						else 
+						{
+							control.includeInLayout = false;
+							control.visible = false;
+						}
+					}
+				}
+			}
+			
+		    //----------------------------------
+		    //  toolBarPosition
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the toolBarPosition property.
+			 */
+			private var _toolBarPosition:String = "bottom";
+			
+			[Inspectable(category="General", enumeration="top,bottom", defaultValue="bottom")]
+			
+			/**
+			 * You can have the tool bar displayed at the top or bottom of the textarea.
+			 * By default the tool bar will be displayed at the bottom. This property 
+			 * only accepts the values "top" and "bottom".
+			 * 
+			 * @default "bottom"
+			 */
+			public function get toolBarPosition():String
+			{
+				return _toolBarPosition;
+			}
+			
+			/**
+			 *  @private
+			 */
+			public function set toolBarPosition(value:String):void
+			{
+				_toolBarPosition = value;
+				
+				if (toolBarContainer && toolBarPosition == "top") 
+				{
+					setChildIndex(toolBarContainer, 0);
+					toolBarContainer.setStyle("borderSides", "top,right,left");
+				} 
+				else if (toolBarContainer && toolBarPosition == "bottom") 
+				{
+					setChildIndex(toolBarContainer, 1);
+					toolBarContainer.setStyle("borderSides", "right,bottom,left");
+				}
+			}
+			
+		    //----------------------------------
+		    //  showToolTips
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the showToolTips property.
+			 */
+			private var _showToolTips:Boolean = true;
+			
+			[Inspectable(category="General", enumeration="true,false", defaultValue="true")]
+			
+			/**
+			 * If <code>true</code>, the component sets tool tips on all controls in the tool bar.
+			 * Some tool tips will also include keyboard shortcut information.
+			 * 
+			 * @default true
+			 */
+			public function get showToolTips():Boolean
+			{
+				return _showToolTips;
+			}
+			
+			/**
+			 *  @private
+			 */
+			public function set showToolTips(value:Boolean):void
+			{
+				_showToolTips = value;
+				invalidateProperties();
+			}
+			
+		    //----------------------------------
+		    //  selection
+		    //----------------------------------
+			
+			/**
+		     *  The selected text.
+		     */
+			public function get selection():TextRange
+			{
+				return new TextRange(this, true);
+			}
+			
+		    //----------------------------------
+		    //  text
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the text property.
+			 */
+			private var _text:String = "";
+			
+			[Bindable("valueCommit")]
+			[CollapseWhiteSpace]
+			[NonCommittingChangeEvent("change")]
+			[Inspectable(category="General")]
+			
+			/**
+		     * The plain text.
+			 * 
+			 * @default ""
+		     */
+			public function get text():String 
+			{
+				return textArea ? textArea.text : _text;
+			}
+			
+			/**
+		     * @private
+		     */
+			public function set text(value:String):void 
+			{
+				_text = value;
+				textChanged = true;
+				invalidateProperties();
+			}
+			
+		    //----------------------------------
+		    //  htmlText
+		    //----------------------------------
+			
+			/**
+			 * @private
+			 * Storage for the htmlText property.
+			 */
+			private var _htmlText:String = "";
+			
+			[Bindable("valueCommit")]
+			[CollapseWhiteSpace]
+			[NonCommittingChangeEvent("change")]
+			[Inspectable(category="General")]
+
+			/**
+		     * The full text entered formatted with HTML.
+			 * 
+			 * @default ""
+		     */
+			public function get htmlText():String
+			{
+				return textArea ? textArea.htmlText : _htmlText;
+			}
+			
+			/**
+		     * @private
+		     */
+			public function set htmlText(value:String):void
+			{
+				_htmlText = value;
+				htmlTextChanged = true;
+				invalidateProperties();
+			}
+			
+		    //--------------------------------------------------------------------------
+		    //
+		    //  Overridden methods
+		    //
+		    //--------------------------------------------------------------------------
+			
+			/**
+			 * @private
+			 */
+			override protected function commitProperties():void 
+			{
+				super.commitProperties();
+				
+				if (firstTime) 
+				{
+					firstTime = false;
+					var textAreaStyleName:String = getStyle("textAreaStyleName");
+					
+					if (textAreaStyleName) 
+						textArea.styleName = textAreaStyleName;
+					
+					textArea.getTextField().alwaysShowSelection = true;
+				}
+				
+				if (_showToolTips) 
+				{
+					fontFamilyControl.toolTip = fontFamilyToolTip;
+					fontSizeControl.toolTip = fontSizeToolTip;
+					boldButton.toolTip = boldToolTip;
+					italicButton.toolTip = italicToolTip;
+					underlineButton.toolTip = underlineToolTip;
+					colorPickerControl.toolTip = colorPickerControlToolTip;
+					textAlignmentControl.toolTipField = alignToolTipField;
+					listControl.toolTip = bulletToolTip;
+					linkControl.toolTip = linkToolTip;
+				} 
+				else 
+				{
+					fontFamilyControl.toolTip = "";
+					fontSizeControl.toolTip = "";
+					boldButton.toolTip = "";
+					italicButton.toolTip = "";
+					underlineButton.toolTip = "";
+					colorPickerControl.toolTip = "";
+					textAlignmentControl.toolTipField = "";
+					listControl.toolTip = "";
+					linkControl.toolTip = "";
+				}
+				
+				if (textChanged || htmlTextChanged) 
+				{
+					// Revert previously set TextFormat.
+					var tf:UITextFormat = IUITextField(textArea.getTextField()).getUITextFormat();
+					// bullet style is not exposed in flex
+					// hence has to be explicitly defaulted.
+					tf.bullet = false;
+					textArea.getTextField().defaultTextFormat = tf;
+					if (textChanged) 
+					{
+						if (_text !== null) 
+							textArea.text = _text;
+						
+						textChanged = false;
+					} 
+					else 
+					{
+						if (_htmlText !== null) 
+							textArea.htmlText = _htmlText;
+						
+						htmlTextChanged = false;
+					}
+				}
+			}
+			
+			/**
+			 * @private
+			 */
+			override public function styleChanged(styleProp:String):void 
+			{
+				super.styleChanged(styleProp);
+				
+				if (styleProp == null || styleProp == "textAreaStyleName") 
+				{
+					if (textArea) 
+					{
+						var textAreaStyleName:String = getStyle("textAreaStyleName");
+						textArea.styleName = textAreaStyleName;
+					}
+				}
+				
+				if (!invalidateToolBarFlag) 
+				{
+					invalidateToolBarFlag = true;
+					callLater(getTextStyles);
+				}
+			}
+			
+		    //--------------------------------------------------------------------------
+		    //
+		    //  Methods
+		    //
+		    //--------------------------------------------------------------------------
+			
+			/**
+			 * @private
+			 * Handles applying rich text formatting (HTML).
+			 */
+			private function setTextStyles(type:String, value:Object = null):void 
+			{
+				var tf:TextFormat;
+				var textAreaTextField:IUITextField = textArea.getTextField();
+				var beginIndex:int = textArea.getTextField().selectionBeginIndex;
+				var endIndex:int = textArea.getTextField().selectionEndIndex;
+				
+				if (beginIndex == endIndex) 
+					tf = previousTextFormat;
+				else 
+					tf = new TextFormat();
+				
+				if (type == "bold" || type == "italic" || type == "underline")
+				{
+					tf[type] = value;
+				}
+				else if (type == "align" || type == "bullet")
+				{
+					if (beginIndex == endIndex) 
+						tf = new TextFormat();
+
+					// Apply the paragraph styles to the whole paragraph instead of just 
+					// the selected text
+					beginIndex = textArea.getTextField().getFirstCharInParagraph(beginIndex) - 1;
+					beginIndex = Math.max(0, beginIndex);
+					endIndex = textArea.getTextField().getFirstCharInParagraph(endIndex) +
+						textArea.getTextField().getParagraphLength(endIndex) - 1;
+					tf[type] = value;
+					previousTextFormat[type] = value;
+					
+					if (!endIndex)
+						textArea.getTextField().defaultTextFormat = tf;
+				} 
+				else if (type == "font") 
+				{
+					tf[type] = fontFamilyControl.text;
+				} 
+				else if (type == "size") 
+				{
+					var fontSize:uint = uint(fontSizeControl.text);
+					if (fontSize > 0)
+						tf[type] = fontSize;
+				} 
+				else if (type == "color") 
+				{
+					tf[type] = uint(colorPickerControl.selectedColor);
+				} 
+				else if (type == "url") 
+				{
+					if (value != defaultLinkProtocol && value != "") 
+					{
+						tf[type] = value;
+						tf["target"] = "_blank";
+					} 
+					else if (tf[type] != "") 
+					{
+						tf[type] = ""; 
+						tf["target"] = ""; 
+					}
+				}
+				
+				textFormatChanged = true;
+				
+				if (beginIndex == endIndex) 
+					previousTextFormat = tf;
+				else 
+					textArea.getTextField().setTextFormat(tf,beginIndex,endIndex);
+				
+				dispatchEvent(new Event("change"));
+				
+				var caretIndex:int = textArea.getTextField().caretIndex;
+				var lineIndex:int =	textArea.getTextField().getLineIndexOfChar(caretIndex);
+				
+				textArea.invalidateDisplayList();
+				textArea.validateDisplayList();
+				
+				// Scroll to make the line containing the caret under viewable area
+				while (lineIndex >= textArea.getTextField().bottomScrollV) 
+				{
+					textArea.verticalScrollPosition++;
+				}
+				
+				callLater(textArea.setFocus);
+			}
+			
+			/**
+			 * @private
+			 */
+			private function getTextStyles():void 
+			{
+				if (!textArea) 
+					return;
+				
+				var tf:TextFormat;
+				var beginIndex:int = textArea.getTextField().selectionBeginIndex;
+				var endIndex:int = textArea.getTextField().selectionEndIndex;
+				
+				if (beginIndex == endIndex) 
+					linkControl.enabled = false;
+				else
+					linkControl.enabled = true;	
+				
+				if (textFormatChanged) 
+					previousTextFormat = null;
+				
+				if (beginIndex == endIndex) 
+				{
+					tf = textArea.getTextField().defaultTextFormat;
+					if (tf.url != "") 
+					{
+						var carIndex:int = textArea.getTextField().caretIndex;
+						if (carIndex < textArea.getTextField().length) 
+						{
+							var tfNext:TextFormat=textArea.getTextField().getTextFormat(carIndex, carIndex + 1);
+							if (!tfNext.url || tfNext.url == "")
+								tf.url = tf.target = "";
+						} 
+						else 
+							tf.url = tf.target = ""; 
+					}
+				} 
+				else 
+					tf = textArea.getTextField().getTextFormat(beginIndex,endIndex);
+				
+				if (!previousTextFormat || previousTextFormat.font != tf.font) 
+					setComboSelection(fontFamilyControl, tf.font ? tf.font : "");
+				if (!previousTextFormat || previousTextFormat.size != tf.size) 
+					setComboSelection(fontSizeControl, tf.size ? String(tf.size) : "");
+				if (!previousTextFormat || previousTextFormat.color != tf.color) 
+					colorPickerControl.selectedColor = Number(tf.color);
+				
+				if (!previousTextFormat || previousTextFormat.bold != tf.bold)
+					boldButton.selected = tf.bold;
+				if (!previousTextFormat || previousTextFormat.italic != tf.italic)
+					italicButton.selected = tf.italic;
+				if (!previousTextFormat || previousTextFormat.underline != tf.underline)
+					underlineButton.selected = tf.underline;
+				
+				if (!previousTextFormat || previousTextFormat.align != tf.align) 
+				{
+					if (tf.align == "left") 
+						textAlignmentControl.selectedIndex = 0;
+					else if (tf.align == "center") 
+						textAlignmentControl.selectedIndex = 1;
+					else if (tf.align == "right") 
+						textAlignmentControl.selectedIndex = 2;
+					else if (tf.align == "justify") 
+						textAlignmentControl.selectedIndex = 3;
+				}
+				
+				if (!previousTextFormat || previousTextFormat.bullet != tf.bullet) 
+					listControl.selected = tf.bullet;
+				if (!previousTextFormat || previousTextFormat.url != tf.url) 
+					linkControl.text = (tf.url == "" || tf.url == null) ? defaultLinkProtocol : tf.url;
+				
+				if (textArea.getTextField().defaultTextFormat != tf) 
+					textArea.getTextField().defaultTextFormat = tf;
+				
+				previousTextFormat = tf;
+				textFormatChanged = false;
+				
+				lastCaretIndex = textArea.getTextField().caretIndex;
+				invalidateToolBarFlag = false;
+			}
+			
+			/**
+			 * @private
+			 */
+			private function setComboSelection(combo:ComboBox,val:String):void 
+			{
+				var length:uint = combo.dataProvider.length;
+				
+				for (var i:uint = 0; i < length; i++)
+				{
+					if (combo.dataProvider.getItemAt(i).toLowerCase() == val.toLowerCase()) 
+					{
+						combo.selectedIndex = i;
+						return;
+					}
+				}
+				
+				combo.selectedIndex = -1;
+				combo.validateNow();
+				combo.text = val;
+			}
+			
+			//--------------------------------------------------------------------------
+			//
+			//  Event handlers
+			//
+			//--------------------------------------------------------------------------
+			
+			/**
+			 * @private
+			 */
+			private function creationCompleteHandler():void 
+			{
+				toolBarControls = _toolBarControls;
+				toolBarPosition = _toolBarPosition;
+				
+				textArea.addEventListener(KeyboardEvent.KEY_DOWN, textArea_keyDownHandler, false, 0, true);
+			}
+			
+			/**
+			 * @private
+			 * Handles user inputting keyboard shortcuts which there are currently 
+			 * 4 that are looked for. Hitting <code>CTRL + B</code> will toggle 
+			 * the bold text option. Hitting <code>CTRL + I</code> will toggle 
+			 * the italic text option. Hitting <code>CTRL + U</code> will toggle 
+			 * the underline text option. Hitting <code>CTRL + L</code> will toggle 
+			 * the list (bullet) text option. 
+			 */
+			private function textArea_keyDownHandler(event:KeyboardEvent):void 
+			{
+				if (event.ctrlKey && event.keyCode == 66) // B = 66
+				{
+					textFormatChanged = true;
+		 			boldButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+		 			event.preventDefault();
+		 		}
+				
+				if (event.ctrlKey && event.keyCode == 73) // I = 73
+				{
+					textFormatChanged = true;
+		 			italicButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+		 			event.preventDefault();
+		 		}
+				
+				if (event.ctrlKey && event.keyCode == 85) // U = 85
+				{
+					textFormatChanged = true;
+		 			underlineButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+		 			event.preventDefault();
+		 		}
+				
+				if (event.ctrlKey && event.keyCode == 76) // L = 76
+				{
+					textFormatChanged = true;
+		 			listControl.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+		 			event.preventDefault();
+		 		}
+				
+		 		if (textFormatChanged) 
+				{
+		 			textArea.getTextField().defaultTextFormat=previousTextFormat;
+		 			textFormatChanged = false;
+		 		}
+			}
+			
+			/**
+			 *  @private
+			 *  This method is called when the user clicks on the textArea, drags
+			 *  out of it and releases the mouse button outside the TextArea.
+			 */
+			private function systemManager_mouseUpHandler(event:MouseEvent):void 
+			{
+				systemManager.removeEventListener(MouseEvent.MOUSE_UP, systemManager_mouseUpHandler, true);	
+				
+				var tf:IUITextField = textArea.getTextField();
+				
+				if (lastCaretIndex != tf.caretIndex) 
+				{
+					getTextStyles();
+				} 
+				else 
+				{
+					linkControl.enabled = (tf.selectionBeginIndex != tf.selectionEndIndex);
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:TextArea id="textArea" height="100%" width="100%" 
+		 change="dispatchEvent(event);" 
+		 valueCommit="dispatchEvent(event);" 
+		 keyUp="getTextStyles()" 
+		 mouseDown="systemManager.addEventListener(MouseEvent.MOUSE_UP, systemManager_mouseUpHandler, true);"
+	/>
+	
+	<mx:HBox id="toolBarContainer" width="100%" paddingBottom="2" paddingTop="2" paddingLeft="2" paddingRight="2" 
+		backgroundColor="0xF0F0EE" borderThickness="1" borderStyle="solid" borderColor="0xCCCCCC" borderSides="top,right,left">
+
+		<mx:ToolBar id="toolBar" width="100%" horizontalGap="7">
+
+			<mx:HBox id="fontStyleControl" includeInLayout="false" visible="false" horizontalGap="-1">
+				<mx:Button id="boldButton" width="20" toggle="true" icon="{ICON_BOLD}" 
+					click="setTextStyles('bold', event.currentTarget.selected);" />
+				<mx:Button id="italicButton" width="20" toggle="true" icon="{ICON_ITALIC}" 
+					click="setTextStyles('italic', event.currentTarget.selected);" />
+				<mx:Button id="underlineButton" width="20" toggle="true" icon="{ICON_UNDERLINE}" 
+					click="setTextStyles('underline', event.currentTarget.selected);" />
+			</mx:HBox>
+
+			<mx:ComboBox id="fontFamilyControl" dataProvider="{fontFamilies}" includeInLayout="false" visible="false" 
+				creationComplete="getTextStyles();lastCaretIndex=-1;" close="setTextStyles('font');" />
+
+			<mx:ComboBox id="fontSizeControl" dataProvider="{fontSizes}" includeInLayout="false" visible="false" 
+				paddingLeft="2" paddingRight="2" close="setTextStyles('size');" />
+
+			<mx:ColorPicker id="colorPickerControl" includeInLayout="false" visible="false" width="22" height="22" close="setTextStyles('color');" />
+
+			<mx:ToggleButtonBar id="textAlignmentControl" dataProvider="{textAlignments}" 
+				includeInLayout="false" visible="false" buttonWidth="20" horizontalGap="-1" 
+				itemClick="setTextStyles('align', ToggleButtonBar(event.currentTarget).dataProvider.getItemAt(ToggleButtonBar(event.currentTarget).selectedIndex).action);"/>
+
+			<mx:Button id="listControl" includeInLayout="false" visible="false" width="20" toggle="true" icon="{ICON_LIST}" 
+				click="setTextStyles('bullet', event.currentTarget.selected);" />
+
+			<mx:TextInput id="linkControl" includeInLayout="false" visible="false" width="140" 
+				focusOut="if (linkTextCommitted) linkTextCommitted = false; 
+						  else 
+						  { setTextStyles('url', linkControl.text); linkControl.text=defaultLinkProtocol;}"
+				enter="setTextStyles('url', linkControl.text); linkControl.text = defaultLinkProtocol; linkTextCommitted = true;" />
+
+		</mx:ToolBar>
+
+	</mx:HBox>
+
+</mx:VBox>

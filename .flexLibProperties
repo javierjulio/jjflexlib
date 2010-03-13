@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flexLibProperties includeAllClasses="false" version="3">
+  <includeClasses>
+    <classEntry path="com.javierjulio.flexlib.containers.ButtonScrollingCanvas"/>
+    <classEntry path="com.javierjulio.flexlib.containers.CanvasWindow"/>
+    <classEntry path="com.javierjulio.flexlib.containers.GradientCanvas"/>
+    <classEntry path="com.javierjulio.flexlib.containers.GradientHBox"/>
+    <classEntry path="com.javierjulio.flexlib.containers.GradientVBox"/>
+    <classEntry path="com.javierjulio.flexlib.containers.SuperTabNavigator"/>
+    <classEntry path="com.javierjulio.flexlib.controls.LabelHeader"/>
+    <classEntry path="com.javierjulio.flexlib.controls.ProgressClock"/>
+    <classEntry path="com.javierjulio.flexlib.controls.ResizableTextArea"/>
+    <classEntry path="com.javierjulio.flexlib.controls.RicherTextEditor"/>
+    <classEntry path="com.javierjulio.flexlib.controls.SearchTextInput"/>
+    <classEntry path="com.javierjulio.flexlib.controls.SuperTabBar"/>
+    <classEntry path="com.javierjulio.flexlib.controls.TextEditor"/>
+    <classEntry path="com.javierjulio.flexlib.controls.TextHeader"/>
+    <classEntry path="com.javierjulio.flexlib.controls.UploadList"/>
+    <classEntry path="com.javierjulio.flexlib.controls.tabBarClasses.SuperTab"/>
+    <classEntry path="com.javierjulio.flexlib.controls.textEditorClasses.LineNumberedField"/>
+    <classEntry path="com.javierjulio.flexlib.controls.uploadListClasses.UploadInput"/>
+    <classEntry path="com.javierjulio.flexlib.controls.uploadListClasses.UploadInputData"/>
+    <classEntry path="com.javierjulio.flexlib.controls.utilityClasses.BorderLayout"/>
+    <classEntry path="com.javierjulio.flexlib.events.SearchTextInputEvent"/>
+    <classEntry path="com.javierjulio.flexlib.events.UploadInputEvent"/>
+    <classEntry path="com.javierjulio.flexlib.events.UploadListEvent"/>
+    <classEntry path="com.javierjulio.flexlib.events.WindowEvent"/>
+    <classEntry path="com.javierjulio.flexlib.skins.GradientBorder"/>
+  </includeClasses>
+  <includeResources>
+    <resourceEntry destPath="assets/images/resize_gripper.png" sourcePath="assets/images/resize_gripper.png"/>
+    <resourceEntry destPath="com/javierjulio/flexlib/containers/ButtonScrollingCanvas.png" sourcePath="com/javierjulio/flexlib/containers/ButtonScrollingCanvas.png"/>
+    <resourceEntry destPath="assets/images/icon_align_right.png" sourcePath="assets/images/icon_align_right.png"/>
+    <resourceEntry destPath="assets/images/RichTextEditor.png" sourcePath="assets/images/RichTextEditor.png"/>
+    <resourceEntry destPath="assets/images/icon_style_bold.png" sourcePath="assets/images/icon_style_bold.png"/>
+    <resourceEntry destPath="com/javierjulio/flexlib/containers/SuperTabNavigator.png" sourcePath="com/javierjulio/flexlib/containers/SuperTabNavigator.png"/>
+    <resourceEntry destPath="assets/images/icon_style_italic.png" sourcePath="assets/images/icon_style_italic.png"/>
+    <resourceEntry destPath="com/javierjulio/flexlib/controls/SuperTabBar.png" sourcePath="com/javierjulio/flexlib/controls/SuperTabBar.png"/>
+    <resourceEntry destPath="assets/images/icon_align_justify.png" sourcePath="assets/images/icon_align_justify.png"/>
+    <resourceEntry destPath="assets/images/icon_align_center.png" sourcePath="assets/images/icon_align_center.png"/>
+    <resourceEntry destPath="assets/images/icon_align_left.png" sourcePath="assets/images/icon_align_left.png"/>
+    <resourceEntry destPath="assets/images/searchTextInput_clearButton.png" sourcePath="assets/images/searchTextInput_clearButton.png"/>
+    <resourceEntry destPath="assets/images/icon_bullet.png" sourcePath="assets/images/icon_bullet.png"/>
+    <resourceEntry destPath="assets/images/searchTextInput_search.png" sourcePath="assets/images/searchTextInput_search.png"/>
+    <resourceEntry destPath="assets/images/icon_style_underline.png" sourcePath="assets/images/icon_style_underline.png"/>
+  </includeResources>
+  <namespaceManifests/>
+</flexLibProperties>
